@@ -6,7 +6,7 @@ from openai import AsyncOpenAI
 from pydantic import BaseModel
 
 from graphiti_core.prompts.models import Message
-from graphiti_core.llm_client.client import MULTILINGUAL_EXTRACTION_RESPONSES, LLMClient
+from graphiti_core.llm_client.client import LLMClient
 from graphiti_core.llm_client.config import DEFAULT_MAX_TOKENS, LLMConfig, ModelSize
 from graphiti_core.llm_client.errors import RateLimitError, RefusalError
 

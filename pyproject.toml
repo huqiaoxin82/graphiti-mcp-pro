@@ -22,3 +22,6 @@ dependencies = [
     "cryptography>=45.0.5",
     "apscheduler>=3.11.0",
 ]
+
+[tool.setuptools]
+packages = ["graphiti_pro_core", "config", "manager", "utils"]

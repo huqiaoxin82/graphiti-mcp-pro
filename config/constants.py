@@ -164,6 +164,21 @@ CONFIG_METADATA: Dict[str, Dict[str, Any]] = {
         'description': 'Neo4j password'
     },
 
+    # Ladybug Configuration
+    'graph_backend': {
+        'env_key': 'GRAPH_BACKEND',
+        'type': ConfigType.STRING,
+        'default': 'ladybug',
+        'group': ConfigGroup.NEO4J,
+        'description': 'Graph backend selection'
+    },
+    'ladybug_database_path': {
+        'env_key': 'LADYBUG_DATABASE_PATH',
+        'type': ConfigType.STRING,
+        'group': ConfigGroup.NEO4J,
+        'description': 'Path to Ladybug database'
+    },
+
     # System Configuration
     'semaphore_limit': {
         'env_key': 'SEMAPHORE_LIMIT',
