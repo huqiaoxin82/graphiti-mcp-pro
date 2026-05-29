@@ -4,7 +4,8 @@ Type definitions for MCP API responses.
 
 from enum import Enum
 from abc import ABC, abstractmethod
-from typing import Any, TypedDict
+from typing import Any
+from typing_extensions import TypedDict
 
 
 class MCPStatus(Enum):

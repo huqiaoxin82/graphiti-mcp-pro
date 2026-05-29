@@ -63,6 +63,40 @@ class GraphitiClient:
                 import ladybug
                 sys.modules['kuzu'] = ladybug
                 from graphiti_core.driver.kuzu_driver import KuzuDriver
+                
+                # Monkey patch KuzuDriver.execute_query to bypass FTS missing issue & fix missing parameters bug
+                import re
+                import logging
+                logger_kuzu = logging.getLogger(__name__)
+
+                original_execute_query = KuzuDriver.execute_query
+                async def patched_execute_query(self, cypher_query_: str, **kwargs):
+                    if 'QUERY_FTS_INDEX' in cypher_query_:
+                        return [], None, None
+                    
+                    params_in_query = set(re.findall(r'\$(\w+)', cypher_query_))
+                    for param in params_in_query:
+                        if param not in kwargs:
+                            kwargs[param] = None
+
+                    try:
+                        results = await self.client.execute(cypher_query_, parameters=kwargs)
+                    except Exception as e:
+                        logger_kuzu.error(f'Error executing Kuzu query: {e}\n{cypher_query_}\n{kwargs}')
+                        raise
+
+                    if not results:
+                        return [], None, None
+
+                    if isinstance(results, list):
+                        dict_results = [list(result.rows_as_dict()) for result in results]
+                    else:
+                        dict_results = list(results.rows_as_dict())
+                    return dict_results, None, None
+
+                KuzuDriver.execute_query = patched_execute_query
+                # Monkey patch missing _database attribute on KuzuDriver which causes crash in graphiti_core
+                KuzuDriver._database = property(lambda self: None)
 
                 ladybug_config = graphiti_config.ladybug
                 if not ladybug_config:

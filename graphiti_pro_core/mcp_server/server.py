@@ -35,6 +35,7 @@ class MCPServer:
                 'Graphiti Agent Memory',
                 instructions=GRAPHITI_MCP_INSTRUCTIONS,
             )
+            self._mcp.settings.json_response = True
 
             # Initialize various components
             initialize_network(self._mcp)
@@ -59,13 +60,7 @@ class MCPServer:
                 allow_methods=["*"],
                 allow_headers=["*"]
             )
-            # Attach explicit shutdown event handler for diagnostics
-            async def _on_shutdown_event():
-                global starlette_shutdown_fired
-                starlette_shutdown_fired = True
-                logger.info("🔚 Starlette shutdown event fired")
-            app.add_event_handler("shutdown", _on_shutdown_event)
-
+            # Diagnostic event handler removed due to Starlette deprecation
 
             # Create uvicorn server with very aggressive shutdown settings
             server_config = uvicorn.Config(

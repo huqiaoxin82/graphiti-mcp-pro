@@ -6,7 +6,7 @@ from openai import AsyncOpenAI
 from pydantic import BaseModel
 
 from graphiti_core.prompts.models import Message
-from graphiti_core.llm_client.client import LLMClient
+from graphiti_core.llm_client.client import LLMClient, get_extraction_language_instruction
 from graphiti_core.llm_client.config import DEFAULT_MAX_TOKENS, LLMConfig, ModelSize
 from graphiti_core.llm_client.errors import RateLimitError, RefusalError
 
@@ -50,14 +50,14 @@ class LLMCompatClient(LLMClient):
         self.main_client = instructor.from_openai(AsyncOpenAI(
             api_key=config.api_key,
             base_url=config.base_url
-        ))
+        ), mode=instructor.Mode.JSON)
 
         # Determine if we need a separate small model client
         if (small_config and not small_config.is_same_as_llm(config)):
             self.small_client = instructor.from_openai(AsyncOpenAI(
                 api_key=small_config.api_key,
                 base_url=small_config.base_url,
-            ))
+            ), mode=instructor.Mode.JSON)
             self.small_config = small_config
             logger.info(f"🔹 Small model configured: {small_config.model} @ {small_config.base_url} (separate auth)")
         else:
@@ -103,6 +103,8 @@ class LLMCompatClient(LLMClient):
         response_model: type[BaseModel] | None = None,
         max_tokens: int = DEFAULT_MAX_TOKENS,
         model_size: ModelSize = ModelSize.medium,
+        group_id: str | None = None,
+        prompt_name: str | None = None,
     ) -> dict[str, typing.Any]:
         """Generate structured response using appropriate model"""
         try:
@@ -110,7 +112,7 @@ class LLMCompatClient(LLMClient):
             client, config = self._get_client_and_config(model_size)
 
             # Add multilingual support prompt
-            messages[0].content += MULTILINGUAL_EXTRACTION_RESPONSES
+            messages[0].content += get_extraction_language_instruction(group_id)
 
             # Convert message format
             openai_messages = self._convert_messages(messages)
@@ -194,7 +196,7 @@ class LLMCompatClient(LLMClient):
                 # logger.info(f"📄 Text Response: {result}")
                 return result
 
-        except instructor.exceptions.InstructorRetryException as e:
+        except instructor.core.InstructorRetryException as e:
             logger.error(f'❌ Instructor retry failed: {e}')
             raise RefusalError(f"Failed to generate valid structured output: {e}")
         except Exception as e:
@@ -209,6 +211,8 @@ class LLMCompatClient(LLMClient):
         response_model: type[BaseModel] | None = None,
         max_tokens: int | None = None,
         model_size: ModelSize = ModelSize.medium,
+        group_id: str | None = None,
+        prompt_name: str | None = None,
     ) -> dict[str, typing.Any]:
         """Public interface for generating responses"""
         if max_tokens is None:
@@ -216,7 +220,7 @@ class LLMCompatClient(LLMClient):
 
         # Directly call _generate_response, instructor has built-in retry mechanism
         return await self._generate_response(
-            messages, response_model, max_tokens, model_size
+            messages, response_model, max_tokens, model_size, group_id, prompt_name
         )
 
     async def _collect_usage_stats(

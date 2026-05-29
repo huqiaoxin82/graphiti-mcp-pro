@@ -10,6 +10,12 @@ from .types import MCPStatus
 class StatefulSessionManager(StreamableHTTPSessionManager):
     """Status-aware Session Manager"""
 
+    # Monkey-patch mcp SDK bug where it expects a session ID on the initial GET request
+    import mcp.server.streamable_http
+    async def _mock_validate_session(self, request, send):
+        return True
+    mcp.server.streamable_http.StreamableHTTPServerTransport._validate_session = _mock_validate_session
+
     @contextlib.asynccontextmanager
     async def run(self) -> AsyncIterator[None]:
         """Override run method to add status management"""

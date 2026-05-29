@@ -51,6 +51,10 @@ async def run_mcp_server():
     """Run the Graphiti MCP server"""
     await GraphitiMCPServer.initialize()
     await GraphitiMCPServer.start()
+    try:
+        await asyncio.Event().wait()
+    except asyncio.CancelledError:
+        pass
     
 async def graceful_stop_mcp_server():
     """Gracefully stop the Graphiti MCP server"""
